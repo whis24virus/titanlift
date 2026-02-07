@@ -32,11 +32,18 @@ export function Analytics() {
                     <MuscleHeatmap sets={heatmapSets} exercises={exercises} />
                 </div>
 
-                <div className="bg-card border border-border p-6 rounded-xl">
+                <div className="bg-card border border-border p-6 rounded-xl min-h-[300px]">
                     <h3 className="text-xl font-bold mb-4">Volume Trends</h3>
-                    <div className="h-64 flex items-center justify-center text-muted-foreground bg-muted/20 rounded-lg">
-                        {/* Placeholder for Recharts graph */}
-                        Weekly Volume Chart Area
+                    <div className="flex items-end justify-between gap-2 px-2 pb-4 bg-muted/5 rounded-lg border border-border/50 h-[200px]">
+                        {/* Mock data for visualization since backend volume history endpoint is pending */}
+                        {[65, 40, 75, 50, 85, 95, 80].map((h, i) => (
+                            <div key={i} className="flex-1 bg-muted/20 rounded-t-lg relative group h-full flex flex-col justify-end overflow-hidden">
+                                <div
+                                    className="w-full bg-emerald-500/80 group-hover:bg-emerald-500 transition-all rounded-t-md"
+                                    style={{ height: `${h}%` }}
+                                ></div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

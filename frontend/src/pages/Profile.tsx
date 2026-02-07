@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trophy, Activity, Calendar, Flame, Zap, Scale, Utensils, ChevronRight } from 'lucide-react';
+import { Trophy, Activity, Calendar, Flame, Zap, Scale, Utensils } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { fetchWorkoutHistory, fetchPhysicalStats, updatePhysicalStats, fetchWeightHistory, fetchNutritionLog, logNutrition } from '../api/client';
 import { Clock } from 'lucide-react';
@@ -116,7 +117,7 @@ export function Profile() {
                                     <input
                                         type="number" value={editForm.height_cm}
                                         onChange={(e) => setEditForm({ ...editForm, height_cm: Number(e.target.value) })}
-                                        className="w-full bg-muted/50 border border-border rounded p-2"
+                                        className="w-full bg-background border border-border rounded p-2 text-foreground focus:ring-2 focus:ring-emerald-500"
                                     />
                                 </div>
                                 <div>
@@ -124,7 +125,7 @@ export function Profile() {
                                     <input
                                         type="number" value={editForm.weight_kg}
                                         onChange={(e) => setEditForm({ ...editForm, weight_kg: Number(e.target.value) })}
-                                        className="w-full bg-muted/50 border border-border rounded p-2"
+                                        className="w-full bg-background border border-border rounded p-2 text-foreground focus:ring-2 focus:ring-emerald-500"
                                     />
                                 </div>
                                 <div>
@@ -238,12 +239,14 @@ export function Profile() {
                             value={`${(profile?.total_volume_kg || 0).toLocaleString()}kg`}
                             subtext="Lifetime"
                         />
-                        <StatCard
-                            icon={<Trophy className="w-5 h-5 text-yellow-400" />}
-                            label="Workouts"
-                            value={profile?.total_workouts.toString() || "0"}
-                            subtext="Completed"
-                        />
+                        <Link to="/awards" className="block transition-transform hover:scale-105">
+                            <StatCard
+                                icon={<Trophy className="w-5 h-5 text-yellow-400" />}
+                                label="Workouts"
+                                value={profile?.total_workouts.toString() || "0"}
+                                subtext="View Awards"
+                            />
+                        </Link>
                         <div className="bg-card border border-border p-4 rounded-xl space-y-1 hover:border-primary/50 transition-colors">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-xs font-medium text-orange-400">Streak</h3>

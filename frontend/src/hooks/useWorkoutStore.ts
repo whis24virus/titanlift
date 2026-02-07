@@ -7,6 +7,7 @@ interface WorkoutState {
     startWorkout: (workout: Workout) => void;
     addSet: (set: Set) => void;
     finishWorkout: () => void;
+    setSets: (sets: Set[]) => void;
 }
 
 export const useWorkoutStore = create<WorkoutState>((set) => ({
@@ -15,4 +16,5 @@ export const useWorkoutStore = create<WorkoutState>((set) => ({
     startWorkout: (workout) => set({ activeWorkout: workout, sets: [] }),
     addSet: (newSet) => set((state) => ({ sets: [...state.sets, newSet] })),
     finishWorkout: () => set({ activeWorkout: null, sets: [] }),
+    setSets: (sets) => set({ sets }),
 }));

@@ -69,20 +69,20 @@ export function ExerciseSelector({ exercises, onSelect, onClose }: ExerciseSelec
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
                         {filteredExercises.map(ex => (
                             <div
                                 key={ex.id}
                                 onClick={() => setPreviewExercise(ex)}
                                 className={cn(
-                                    "p-3 rounded-xl border cursor-pointer transition-all flex justify-between items-center group",
+                                    "p-3 rounded-xl border cursor-pointer transition-all flex justify-between items-center group touch-none",
                                     previewExercise?.id === ex.id
                                         ? "bg-emerald-500/10 border-emerald-500"
                                         : "bg-card border-border hover:border-emerald-500/30"
                                 )}
                             >
-                                <div>
-                                    <h4 className="font-semibold">{ex.name}</h4>
+                                <div className="min-w-0 pr-2">
+                                    <h4 className="font-semibold truncate">{ex.name}</h4>
                                     <p className="text-xs text-muted-foreground">{ex.muscle_group}</p>
                                 </div>
                                 <button
@@ -90,7 +90,7 @@ export function ExerciseSelector({ exercises, onSelect, onClose }: ExerciseSelec
                                         e.stopPropagation();
                                         onSelect(ex);
                                     }}
-                                    className="opacity-0 group-hover:opacity-100 bg-emerald-500 text-white p-2 rounded-lg hover:bg-emerald-600 transition-all transform hover:scale-105 active:scale-95"
+                                    className="md:opacity-0 md:group-hover:opacity-100 opacity-100 bg-emerald-500 text-white p-2 rounded-lg hover:bg-emerald-600 transition-all transform active:scale-95 shrink-0"
                                 >
                                     <Plus className="w-4 h-4" />
                                 </button>

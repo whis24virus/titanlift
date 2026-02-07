@@ -1,6 +1,7 @@
 use axum::{
     extract::{State, Path},
     Json,
+    http::StatusCode,
 };
 use crate::{AppState, models::{Workout, Set}};
 use serde::{Deserialize, Serialize};
@@ -52,7 +53,7 @@ pub struct LogSetRequest {
 pub async fn log_set(
     State(state): State<AppState>,
     Json(payload): Json<LogSetRequest>,
-) -> Json<LogSetResponse> {
+) -> Result<Json<LogSetResponse>, (StatusCode, String)> {
     // 1. Get User ID from workout
     let workout = sqlx::query!(
         "SELECT user_id FROM workouts WHERE id = $1",
@@ -60,7 +61,7 @@ pub async fn log_set(
     )
     .fetch_one(&state.db)
     .await
-    .unwrap();
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch workout user: {}", e)))?;
 
     let user_id = workout.user_id;
 
@@ -77,7 +78,7 @@ pub async fn log_set(
     )
     .fetch_one(&state.db)
     .await
-    .unwrap()
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch max weight: {}", e)))?
     .max_val
     .unwrap_or(0.0);
 
@@ -89,8 +90,8 @@ pub async fn log_set(
         FROM sets s
         JOIN workouts w ON s.workout_id = w.id
         WHERE s.exercise_id = $1 
-          AND w.user_id = $2
-          AND s.weight_kg >= $3
+        AND w.user_id = $2
+        AND s.weight_kg >= $3
         "#,
         payload.exercise_id,
         user_id,
@@ -98,7 +99,7 @@ pub async fn log_set(
     )
     .fetch_one(&state.db)
     .await
-    .unwrap()
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to fetch max reps: {}", e)))?
     .max_val
     .unwrap_or(0);
 
@@ -114,13 +115,13 @@ pub async fn log_set(
     )
     .fetch_one(&state.db)
     .await
-    .unwrap();
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to insert set: {}", e)))?;
 
     // 5. Determine Rewards
     let is_new_1rm = set.weight_kg > prev_max_weight;
     let is_vol_pr = !is_new_1rm && set.reps > prev_max_reps && set.reps > 5; // Arbitrary min reps to avoid trivial PRs
 
-    Json(LogSetResponse { set, is_new_1rm, is_vol_pr })
+    Ok(Json(LogSetResponse { set, is_new_1rm, is_vol_pr }))
 }
 
 pub async fn list_sets(
@@ -135,6 +136,23 @@ pub async fn list_sets(
     .unwrap_or(vec![]);
 
     Json(sets)
+}
+
+pub async fn delete_set(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> StatusCode {
+    let result = sqlx::query!(
+        "DELETE FROM sets WHERE id = $1",
+        id
+    )
+    .execute(&state.db)
+    .await;
+
+    match result {
+        Ok(_) => StatusCode::NO_CONTENT,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
 }
 
 #[derive(Serialize)]
@@ -253,4 +271,26 @@ pub async fn finish_workout(
         end_time: now,
         badges,
     })
+}
+
+pub async fn get_active_workout(
+    State(state): State<AppState>,
+) -> Result<Json<Workout>, StatusCode> {
+    // Find the most recent workout for DEMO_USER_ID that hasn't ended
+    // Ideally user_id comes from auth, but for now hardcoded or passed in query
+    let user_id = Uuid::parse_str("763b9c95-4bae-4044-9d30-7ae513286b37").unwrap(); // Demo User
+
+    let workout = sqlx::query_as!(
+        Workout,
+        "SELECT * FROM workouts WHERE user_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1",
+        user_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match workout {
+        Some(w) => Ok(Json(w)),
+        None => Err(StatusCode::NOT_FOUND),
+    }
 }
