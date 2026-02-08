@@ -173,38 +173,80 @@ pub async fn get_workout_history(
     }
 }
 
+#[derive(Deserialize)]
+pub struct LeaderboardQuery {
+    pub period: Option<String>,        // "weekly", "monthly", "all" (default)
+    pub muscle_group: Option<String>,  // "chest", "back", "legs", etc.
+}
+
 pub async fn get_leaderboard(
     State(state): State<AppState>,
+    axum::extract::Query(query): axum::extract::Query<LeaderboardQuery>,
 ) -> impl IntoResponse {
-    let leaderboard = sqlx::query!(
+    let period = query.period.unwrap_or_else(|| "all".to_string());
+    let muscle_group = query.muscle_group;
+
+    // Build date filter based on period
+    let date_filter = match period.as_str() {
+        "weekly" => "AND s.created_at >= NOW() - INTERVAL '7 days'",
+        "monthly" => "AND s.created_at >= NOW() - INTERVAL '30 days'",
+        _ => "", // "all" - no date filter
+    };
+
+    // Build muscle group filter
+    let muscle_filter = if muscle_group.is_some() {
+        "AND e.muscle_group = $1"
+    } else {
+        ""
+    };
+
+    // Dynamic query with optional filters
+    let query_str = format!(
         r#"
         SELECT u.id, u.username, 
         COALESCE(SUM(s.weight_kg * s.reps), 0.0) as total_volume
         FROM users u
         LEFT JOIN workouts w ON u.id = w.user_id
         LEFT JOIN sets s ON w.id = s.workout_id
+        LEFT JOIN exercises e ON s.exercise_id = e.id
+        WHERE 1=1 {} {}
         GROUP BY u.id, u.username
         ORDER BY total_volume DESC
         LIMIT 10
-        "#
-    )
-    .fetch_all(&state.db)
-    .await;
+        "#,
+        date_filter, muscle_filter
+    );
 
+    // Execute query based on whether we have muscle filter
+    let result = if let Some(ref mg) = muscle_group {
+        sqlx::query_as::<_, (uuid::Uuid, String, Option<f64>)>(&query_str)
+            .bind(mg)
+            .fetch_all(&state.db)
+            .await
+    } else {
+        sqlx::query_as::<_, (uuid::Uuid, String, Option<f64>)>(&query_str)
+            .fetch_all(&state.db)
+            .await
+    };
 
-    match leaderboard {
+    match result {
         Ok(recs) => {
-             let response = recs.into_iter().enumerate().map(|(idx, r)| {
+            let response = recs.into_iter().enumerate().map(|(idx, (id, username, total_volume))| {
                 serde_json::json!({
-                    "id": r.id,
-                    "username": r.username,
-                    "total_volume_kg": r.total_volume.unwrap_or(0.0),
-                    "rank": idx + 1
+                    "id": id,
+                    "username": username,
+                    "total_volume_kg": total_volume.unwrap_or(0.0),
+                    "rank": idx + 1,
+                    "period": period,
+                    "muscle_group": muscle_group
                 })
             }).collect::<Vec<_>>();
             Json(response).into_response()
         },
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        Err(e) => {
+            tracing::error!("Leaderboard query failed: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
     }
 }
 
