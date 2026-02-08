@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE users \n        SET height_cm = COALESCE($1, height_cm),\n            current_weight_kg = COALESCE($2, current_weight_kg),\n            gender = COALESCE($3, gender),\n            date_of_birth = COALESCE($4, date_of_birth),\n            activity_level = COALESCE($5, activity_level)\n        WHERE id = $6\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Float8",
+        "Float8",
+        "Text",
+        "Date",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a45dc98e1a02e01839089bd56e86044110fbc59a937fdf6c0658e20b8db7e1fe"
+}

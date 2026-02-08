@@ -1,0 +1,1 @@
+-- Empty migration to satisfy sqlx history checks

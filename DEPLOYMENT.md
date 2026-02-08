@@ -75,23 +75,32 @@ To avoid CORS issues, simple add a `vercel.json` to your `frontend` folder:
 
 ## 💻 Local Docker Deployment
 
-To run the entire stack locally on your machine:
+To run the entire stack locally on your machine using Docker:
+
+### Prerequisites
+- Docker & Docker Compose installed.
+
+### Steps
 
 1. **Start the services:**
    ```bash
-   docker compose up --build -d
+   docker compose up --build
    ```
    This will:
-   - Build the backend Rust application.
-   - Build the frontend React application.
-   - Start a PostgreSQL database.
-   - Connect everything together.
+   - Build the **Backend** (Rust) application using a multi-stage build.
+   - Build the **Frontend** (React) application and serve it via Nginx.
+   - Start a **PostgreSQL** database.
+   - Automatically run database migrations on startup.
 
 2. **Access the App:**
-   - Frontend: `http://localhost:8080`
-   - API: `http://localhost:3000`
+   - **Frontend:** [http://localhost](http://localhost) (Port 80)
+   - **API:** [http://localhost:3000](http://localhost:3000)
 
 3. **Stop the services:**
    ```bash
    docker compose down
    ```
+
+### Troubleshooting
+- **Database Connection:** If the backend fails to connect initially, it may restart automatically until the database is ready.
+- **SQLx Offline Mode:** The backend build uses `sqlx-data.json` to compile without a live database connection. If you change SQL queries, run `cargo sqlx prepare` locally to update this file.

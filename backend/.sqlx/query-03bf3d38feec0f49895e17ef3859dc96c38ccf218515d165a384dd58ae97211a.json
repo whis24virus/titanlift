@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            w.start_time, \n            w.user_id,\n            u.current_weight_kg,\n            COALESCE(SUM(s.weight_kg * s.reps), 0) as volume,\n            COUNT(s.id) as set_count\n        FROM workouts w\n        JOIN users u ON w.user_id = u.id\n        LEFT JOIN sets s ON w.id = s.workout_id\n        WHERE w.id = $1\n        GROUP BY w.id, w.start_time, w.user_id, u.current_weight_kg\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "start_time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "current_weight_kg",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "volume",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "set_count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      false,
+      true,
+      null,
+      null
+    ]
+  },
+  "hash": "03bf3d38feec0f49895e17ef3859dc96c38ccf218515d165a384dd58ae97211a"
+}

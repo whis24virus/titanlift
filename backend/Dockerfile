@@ -1,40 +1,51 @@
-# Stage 1: Compute a recipe file for dependencies
-FROM rust:1.81-slim-bullseye AS planner
-WORKDIR /app
-RUN cargo install cargo-chef
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
+# Build Stage
+FROM rust:1.80 as builder
 
-# Stage 2: Cache and build dependencies
-FROM rust:1.81-slim-bullseye AS cacher
-WORKDIR /app
-RUN cargo install cargo-chef
-COPY --from=planner /app/recipe.json recipe.json
-# Build dependencies - this is the caching layer!
-RUN cargo chef cook --release --bin backend --recipe-path recipe.json
+WORKDIR /usr/src/app
 
-# Stage 3: Build the application
-FROM rust:1.81-slim-bullseye AS builder
-WORKDIR /app
-COPY . .
-# Copy over the cached dependencies
-COPY --from=cacher /app/target target
-COPY --from=cacher /usr/local/cargo /usr/local/cargo
-RUN cargo build --release --bin backend
+# install sqlx-cli for checking/preparing if needed (optional, using offline mode mainly)
+# but we need to ensure dependencies are installed
 
-# Stage 4: Runtime environment
-FROM debian:bullseye-slim AS runtime
-WORKDIR /app
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# 1. Create a dummy project to cache dependencies
+RUN mkdir src
+# Create a dummy main.rs to allow cargo build to run and cache dependencies
+RUN echo "fn main() {}" > src/main.rs
 
-COPY --from=builder /app/target/release/backend /usr/local/bin/backend
-COPY --from=builder /app/migrations ./migrations
+COPY Cargo.toml Cargo.lock ./
 
-# Expose the API port
+# SQLx offline mode requires these
+# We will copy the specific json file later, but for dependency build we don't need it yet.
+# However, sqlx macros might trigger.
+# To safely cache deps, we remove the sqlx-data.json requirement temporarily or just build deps.
+RUN cargo build --release || true 
+# The above build might fail if sqlx macros run on dummy main (unlikely) or if lib.rs exists (we didn't copy it).
+# Actually, just building deps:
+RUN rm -rf src
+
+# 2. Copy actual source code
+COPY src ./src
+COPY migrations ./migrations
+COPY .sqlx ./.sqlx
+
+# 3. Build the actual application
+# key: Enable offline mode
+ENV SQLX_OFFLINE=true
+RUN cargo build --release
+
+# Runtime Stage
+FROM debian:bookworm-slim
+
+# Install runtime dependencies (OpenSSL, etc.)
+RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/local/bin
+
+# Copy the binary from builder
+COPY --from=builder /usr/src/app/target/release/backend .
+
+# Copy environment file example if needed, strictly speaking we use docker env vars
+# COPY .env .env 
+
 EXPOSE 3000
 
-CMD ["/usr/local/bin/backend"]
+CMD ["./backend"]

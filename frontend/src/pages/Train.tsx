@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { fetchExercises, createWorkout, logSet, listTemplates, getTemplate, finishWorkoutApi, updateTemplateExercises } from '../api/client';
 import { useWorkoutStore } from '../hooks/useWorkoutStore';
-import { Play, Plus, GripVertical, Info, Dumbbell, Trophy, Medal, Crown, ListChecks } from 'lucide-react';
+import { Play, Plus, GripVertical, Info, Dumbbell, Trophy, Medal, Crown, ListChecks, ChevronRight, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ExerciseSelector } from '../components/ExerciseSelector';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 import type { Exercise } from '../api/types';
 
 // Hardcoded user ID for demo
@@ -19,32 +21,7 @@ interface QueuedExercise extends Exercise {
     queueId: string; // Unique ID for DnD
 }
 
-// Fallback images (Anime Style) - Local Assets
-const START_IMAGES: Record<string, string> = {
-    "Barbell Bench Press": "/images/bench.png",
-    "Barbell Squat": "/images/squat.png",
-    "Deadlift": "/images/deadlift.png",
-    "Overhead Press": "/images/bench.png", // Reusing bench as placeholder
-    "Barbell Row": "/images/deadlift.png", // Reusing deadlift as placeholder
-    "Pull Up": "/images/deadlift.png",
-    "Dumbbell Curl": "/images/bench.png",
-};
-
-const BADGE_DESCRIPTIONS: Record<string, string> = {
-    "Titan Volume": "Lifted over 10,000kg in a single session!",
-    "Heavy Lifter": "Lifted over 5,000kg in a single session!",
-    "Marathoner": "Trained for over 90 minutes!",
-    "Speed Demon": "High volume in under 30 minutes!",
-    "Volume Warrior": "Completed 20+ sets!"
-};
-
-// Helper to get image
-const getExerciseImage = (ex: any) => {
-    if (!ex) return null;
-    if (START_IMAGES[ex.name]) return START_IMAGES[ex.name];
-    if (ex.animation_url && ex.animation_url.includes('giphy')) return START_IMAGES["Barbell Bench Press"];
-    return ex.animation_url;
-};
+// Fallback images (Anime Style) - Local Assets removed as we use CSS gradients now
 
 function RewardToast({ message, subtext, onClose }: { message: string, subtext?: string, onClose: () => void }) {
     useEffect(() => {
@@ -53,12 +30,14 @@ function RewardToast({ message, subtext, onClose }: { message: string, subtext?:
     }, [onClose]);
 
     return (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4">
-            <div className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-3 border-2 border-yellow-200">
-                <Crown className="w-6 h-6 animate-bounce" />
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4">
+            <div className="glass-panel px-6 py-4 rounded-full shadow-[0_0_30px_rgba(255,140,0,0.4)] flex items-center gap-4 border border-accent/30 bg-black/60 backdrop-blur-xl">
+                <div className="p-2 bg-accent/20 rounded-full">
+                    <Crown className="w-5 h-5 text-accent animate-pulse" />
+                </div>
                 <div>
-                    <h4 className="font-black text-lg uppercase tracking-wider">{message}</h4>
-                    {subtext && <p className="text-xs text-yellow-100 font-medium">{subtext}</p>}
+                    <h4 className="font-black text-sm uppercase tracking-wider text-white">{message}</h4>
+                    {subtext && <p className="text-[10px] text-accent font-medium tracking-wide">{subtext}</p>}
                 </div>
             </div>
         </div>
@@ -69,33 +48,38 @@ function BadgeModal({ badges, onClose }: { badges: string[], onClose: () => void
     if (badges.length === 0) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-card w-full max-w-md mx-4 rounded-xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95">
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-center">
-                    <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-                    <h2 className="text-3xl font-black text-white mb-2">Session Complete!</h2>
-                    <p className="text-indigo-100">You earned {badges.length} new badges!</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in">
+            <Card className="w-full max-w-md mx-4 overflow-hidden border-secondary/30 shadow-[0_0_50px_rgba(188,0,255,0.2)]">
+                <div className="p-8 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-secondary/20 to-transparent" />
+                    <div className="relative z-10">
+                        <Trophy className="w-16 h-16 text-secondary mx-auto mb-4 drop-shadow-[0_0_15px_rgba(188,0,255,0.5)]" />
+                        <h2 className="text-3xl font-black text-white mb-2 italic tracking-tighter">SESSION COMPLETE</h2>
+                        <p className="text-secondary/80 font-mono text-sm uppercase tracking-widest">You earned {badges.length} new badges!</p>
+                    </div>
                 </div>
                 <div className="p-6 space-y-4">
                     {badges.map(badge => (
-                        <div key={badge} className="flex items-center gap-4 p-4 bg-muted/40 rounded-lg border border-border hover:border-indigo-500/50 transition-colors">
-                            <div className="p-3 bg-indigo-500/10 rounded-full">
-                                <Medal className="w-6 h-6 text-indigo-400" />
+                        <div key={badge} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 hover:border-secondary/50 transition-colors group">
+                            <div className="p-3 bg-secondary/10 rounded-full group-hover:bg-secondary/20 transition-colors">
+                                <Medal className="w-6 h-6 text-secondary" />
                             </div>
                             <div>
-                                <h4 className="font-bold text-lg">{badge}</h4>
+                                <h4 className="font-bold text-lg text-white group-hover:text-secondary transition-colors">{badge}</h4>
                                 <p className="text-xs text-muted-foreground">{BADGE_DESCRIPTIONS[badge] || "Great Achievement!"}</p>
                             </div>
                         </div>
                     ))}
-                    <button
+                    <Button
                         onClick={onClose}
-                        className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-bold"
+                        variant="secondary"
+                        size="lg"
+                        className="w-full font-black shadow-neon-purple mt-4"
                     >
-                        Awesome!
-                    </button>
+                        AWESOME
+                    </Button>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }
@@ -117,7 +101,7 @@ function WorkoutTimer({ startTime }: { startTime: string }) {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    return <span className="font-mono text-emerald-400 text-xl font-bold">{formatTime(elapsed)}</span>;
+    return <span className="font-mono text-primary text-xl font-bold tracking-wider drop-shadow-[0_0_5px_rgba(0,242,255,0.5)]">{formatTime(elapsed)}</span>;
 }
 
 export function Train() {
@@ -289,33 +273,38 @@ export function Train() {
 
     if (!activeWorkout) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 p-4">
-                <div className="text-center space-y-2">
-                    <h2 className="text-4xl font-extrabold bg-gradient-to-r from-blue-500 to-emerald-400 text-transparent bg-clip-text">
-                        Ready to Lift?
+            <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-8 p-4 relative">
+                {/* Background decoration */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/20 blur-[120px] rounded-full -z-10 animate-pulse-slow" />
+
+                <div className="text-center space-y-4 relative z-10">
+                    <h2 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white">
+                        READY TO <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">LIFT?</span>
                     </h2>
-                    <p className="text-muted-foreground">Select a split or start fresh.</p>
+                    <p className="text-muted-foreground font-mono uppercase tracking-widest text-sm">Select a protocol or initiate freestyle sequence.</p>
                 </div>
 
-                <div className="w-full max-w-xs space-y-4">
-                    <div className="flex justify-between items-center px-1">
-                        <label className="text-sm font-medium text-muted-foreground">Workout Split</label>
-                        <Link to="/splits" className="text-xs text-emerald-400 font-bold hover:underline">
-                            Manage Splits
-                        </Link>
-                    </div>
-                    <select
-                        className="w-full bg-card border border-input rounded-lg px-4 py-3 shadow-sm"
-                        value={selectedTemplateId}
-                        onChange={(e) => setSelectedTemplateId(e.target.value)}
-                    >
-                        <option value="">Empty Workout</option>
-                        {templates?.map(t => (
-                            <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                    </select>
+                <div className="w-full max-w-md space-y-6 relative z-10">
+                    <Card className="p-1 gap-1 flex flex-col bg-black/40 border-white/10 backdrop-blur-xl">
+                        <div className="flex justify-between items-center px-4 py-2">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Protocol</label>
+                            <Link to="/splits" className="text-[10px] text-primary font-bold hover:underline tracking-wider uppercase flex items-center gap-1">
+                                Manage Splits <ChevronRight className="w-3 h-3" />
+                            </Link>
+                        </div>
+                        <select
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-lg font-bold text-white focus:outline-none focus:border-primary/50 transition-colors"
+                            value={selectedTemplateId}
+                            onChange={(e) => setSelectedTemplateId(e.target.value)}
+                        >
+                            <option value="" className="bg-slate-900 text-muted-foreground">Freestyle Workout (Empty)</option>
+                            {templates?.map(t => (
+                                <option key={t.id} value={t.id} className="bg-slate-900 text-white">{t.name}</option>
+                            ))}
+                        </select>
+                    </Card>
 
-                    <button
+                    <Button
                         onClick={() => startMutation.mutate({
                             user_id: DEMO_USER_ID,
                             name: selectedTemplateId ? templates?.find(t => t.id === selectedTemplateId)?.name : "Freestyle Workout",
@@ -323,10 +312,13 @@ export function Train() {
                             template_id: selectedTemplateId || undefined
                         })}
                         disabled={startMutation.isPending}
-                        className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full text-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+                        variant="primary"
+                        size="lg"
+                        glow
+                        className="w-full h-16 text-xl font-black italic tracking-wider shadow-neon"
                     >
-                        <Play fill="currentColor" /> Start
-                    </button>
+                        <Play fill="currentColor" className="mr-3 w-6 h-6" /> INITIATE WORKOUT
+                    </Button>
                 </div>
             </div>
         );
@@ -372,16 +364,20 @@ export function Train() {
 
             {/* Left Col: Queue / Selection */}
             <div className={cn(
-                "lg:col-span-1 flex flex-col bg-card border border-border rounded-xl eval transition-all duration-300",
-                currentExercise ? "hidden lg:flex overflow-hidden" : "h-full overflow-hidden"
+                "lg:col-span-1 flex flex-col glass-panel rounded-3xl border-white/5 overflow-hidden transition-all duration-300 relative",
+                currentExercise ? "hidden lg:flex" : "h-full"
             )}>
-                <div className="p-4 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
-                    <h2 className="font-bold text-lg flex items-center gap-2">
-                        <ListChecks className="w-5 h-5 text-emerald-400" /> Workout Queue
+                {/* Background Glow */}
+                <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+
+                <div className="p-5 border-b border-white/5 backdrop-blur-md sticky top-0 z-10 flex justify-between items-center bg-black/20">
+                    <h2 className="font-black italic tracking-tighter text-lg flex items-center gap-2 text-white">
+                        <ListChecks className="w-5 h-5 text-primary" /> QUEUE
                     </h2>
+                    <span className="text-[10px] font-bold bg-white/10 px-2 py-1 rounded text-muted-foreground">{exerciseQueue.length} ITEMS</span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
@@ -402,17 +398,19 @@ export function Train() {
                         </SortableContext>
                     </DndContext>
 
-                    <button
-                        className="w-full py-3 border-2 border-dashed border-border rounded-lg text-muted-foreground hover:border-emerald-500 hover:text-emerald-500 transition-colors text-sm font-bold flex items-center justify-center gap-2"
+                    <Button
+                        variant="ghost"
+                        className="w-full border border-dashed border-white/10 text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5 h-12 dashed-border"
                         onClick={() => setIsSelectorOpen(true)}
                     >
-                        <Plus className="w-4 h-4" /> Add Exercise
-                    </button>
+                        <Plus className="w-4 h-4 mr-2" /> ADD EXERCISE
+                    </Button>
+
                     {isSelectorOpen && (
                         <ExerciseSelector
                             exercises={exercises || []}
                             onClose={() => setIsSelectorOpen(false)}
-                            onSelect={(ex) => {
+                            onSelect={(ex: Exercise) => {
                                 const newQ = { ...ex, queueId: `${ex.id}-${Date.now()}` };
                                 setExerciseQueue([...exerciseQueue, newQ]);
                                 if (!activeQueueId) setActiveQueueId(newQ.queueId);
@@ -420,10 +418,12 @@ export function Train() {
                             }}
                         />
                     )}
+
                     {exerciseQueue.length === 0 && (
-                        <p className="text-center text-xs text-muted-foreground py-4">
-                            Queue is empty. Add exercises or start from a split.
-                        </p>
+                        <div className="text-center py-8 space-y-2 opacity-50">
+                            <Dumbbell className="w-8 h-8 text-muted-foreground mx-auto" />
+                            <p className="text-xs text-muted-foreground">Queue is empty.</p>
+                        </div>
                     )}
                 </div>
             </div>
@@ -460,130 +460,166 @@ export function Train() {
 
                 {currentExercise ? (
                     <>
-                        <div className="group relative bg-card/40 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl transition-all duration-500 hover:bg-card/60 shrink-0 mb-8 z-0">
-                            {/* Animated Glow Effect */}
-                            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 opacity-30 blur-2xl group-hover:opacity-50 transition duration-1000 rounded-3xl"></div>
+                        {/* Active Exercise Banner */}
+                        <div className="glass-panel p-6 sm:p-8 rounded-3xl border-white/10 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full -z-10 group-hover:bg-primary/20 transition-colors duration-700" />
 
-                            <div className="relative z-10 rounded-3xl overflow-hidden">
-                                {/* Compact Banner */}
-                                <div className="relative h-24 md:h-64 bg-black/60 overflow-hidden flex items-center justify-center shrink-0">
-                                    {getExerciseImage(currentExercise) ? (
-                                        <img
-                                            src={getExerciseImage(currentExercise)!}
-                                            alt={currentExercise.name}
-                                            className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
-                                        />
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-2 text-muted-foreground/30">
-                                            <Dumbbell className="w-12 h-12" />
-                                        </div>
-                                    )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-                                    <div className="absolute bottom-3 left-4 right-4 flex justify-between items-end">
-                                        <div>
-                                            <h3 className="text-lg md:text-3xl font-black tracking-tight text-white drop-shadow-md line-clamp-1">
-                                                {currentExercise.name}
-                                            </h3>
-                                            <p className="text-emerald-400 font-medium text-[10px] md:text-xs flex items-center gap-2">
-                                                <Info className="w-3 h-3" /> {currentExercise.muscle_group}
-                                            </p>
-                                        </div>
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 relative z-10">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="px-2 py-1 bg-secondary/20 text-secondary border border-secondary/20 rounded text-[10px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(188,0,255,0.2)]">
+                                            {currentExercise.muscle_group}
+                                        </span>
+                                        {exerciseQueue.length > 1 && (
+                                            <span className="text-[10px] font-mono text-muted-foreground">
+                                                NEXT: {exerciseQueue.find(e => e.queueId !== activeQueueId)?.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <h2 className="text-3xl md:text-5xl font-black italic text-white tracking-tighter leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+                                        {currentExercise.name}
+                                    </h2>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right hidden md:block">
+                                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Session Timer</div>
+                                        <WorkoutTimer startTime={activeWorkout.start_time} />
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="p-4 md:p-8 flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-8">
-                                    <div className="space-y-4">
-                                        <div className="space-y-4">
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-1 text-center relative group/input">
-                                                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground group-hover/input:text-emerald-400 transition-colors">Weight</label>
-                                                    <input
-                                                        type="number"
-                                                        className="w-full bg-black/20 border-b-2 border-white/10 rounded-t-lg px-2 py-3 text-2xl font-mono font-bold text-center text-white focus:outline-none focus:border-emerald-500 focus:bg-emerald-500/10 transition-all placeholder:text-white/10"
-                                                        value={weight || ''}
-                                                        onChange={(e) => setWeight(Number(e.target.value))}
-                                                        placeholder="0"
-                                                    />
-                                                </div>
-                                                <div className="space-y-1 text-center relative group/input">
-                                                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground group-hover/input:text-emerald-400 transition-colors">Reps</label>
-                                                    <input
-                                                        type="number"
-                                                        className="w-full bg-black/20 border-b-2 border-white/10 rounded-t-lg px-2 py-3 text-2xl font-mono font-bold text-center text-white focus:outline-none focus:border-emerald-500 focus:bg-emerald-500/10 transition-all placeholder:text-white/10"
-                                                        value={reps || ''}
-                                                        onChange={(e) => setReps(Number(e.target.value))}
-                                                        placeholder="0"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={handleLogSet}
-                                                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-black py-3 md:py-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-base md:text-lg uppercase tracking-wide"
-                                            >
-                                                <Plus className="w-5 h-5" /> Log
-                                            </button>
-                                        </div>
-                                    </div>
+                            {/* Instructions/Video Toggle could go here, for now just simple info */}
+                            {currentExercise.description && (
+                                <div className="bg-black/20 border border-white/5 rounded-xl p-4 mb-6 backdrop-blur-sm">
+                                    <p className="text-sm text-muted-foreground/80 leading-relaxed max-w-3xl">
+                                        <Info className="w-3 h-3 inline mr-2 text-primary" />
+                                        {currentExercise.description}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6">
+                                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                                    <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Sets</span>
+                                    <span className="text-xl md:text-2xl font-bold text-white">{sets.filter(s => s.exercise_id === currentExercise.id).length}</span>
+                                </div>
+                                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                                    <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Max W</span>
+                                    <span className="text-xl md:text-2xl font-bold text-white">
+                                        {Math.max(0, ...sets.filter(s => s.exercise_id === currentExercise.id).map(s => s.weight_kg || 0))}
+                                        <span className="text-xs font-normal text-muted-foreground ml-1">kg</span>
+                                    </span>
+                                </div>
+                                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                                    <span className="block text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Vol</span>
+                                    <span className="text-xl md:text-2xl font-bold text-white">
+                                        {sets.filter(s => s.exercise_id === currentExercise.id).reduce((acc, s) => acc + (s.weight_kg || 0) * (s.reps || 0), 0) / 1000}
+                                        <span className="text-xs font-normal text-muted-foreground ml-1">k</span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* History List */}
-                        <div className="bg-card border border-border rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-backwards shrink-0 z-0 relative">
-                            <div className="p-4 border-b border-border bg-muted/20 flex justify-between items-center">
-                                <h3 className="font-bold flex items-center gap-2">
-                                    <Trophy className="w-4 h-4 text-emerald-400" />
-                                    Sets History
-                                </h3>
-                                <span className="text-xs text-muted-foreground font-mono">
-                                    {sets.filter(s => s.exercise_id === currentExercise.id).length} Sets
-                                </span>
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleLogSet();
+                            }}
+                            className="glass-panel p-6 rounded-3xl border-white/10 space-y-6"
+                        >
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-1 text-center relative group/input">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground group-hover/input:text-primary transition-colors">Weight</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-black/20 border-b-2 border-white/10 rounded-t-lg px-2 py-3 text-2xl font-mono font-bold text-center text-white focus:outline-none focus:border-primary focus:bg-primary/10 transition-all placeholder:text-white/10"
+                                        value={weight || ''}
+                                        onChange={(e) => setWeight(Number(e.target.value))}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="space-y-1 text-center relative group/input">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground group-hover/input:text-secondary transition-colors">Reps</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-black/20 border-b-2 border-white/10 rounded-t-lg px-2 py-3 text-2xl font-mono font-bold text-center text-white focus:outline-none focus:border-secondary focus:bg-secondary/10 transition-all placeholder:text-white/10"
+                                        value={reps || ''}
+                                        onChange={(e) => setReps(Number(e.target.value))}
+                                        placeholder="0"
+                                    />
+                                </div>
                             </div>
-                            <div className="divide-y divide-border">
-                                {sets.filter(s => s.exercise_id === currentExercise.id).length === 0 ? (
-                                    <div className="p-8 text-center space-y-2">
-                                        <p className="text-muted-foreground text-sm">No sets logged yet.</p>
-                                        <p className="text-xs text-muted-foreground/50">Crush your limits!</p>
-                                    </div>
-                                ) : (
-                                    sets.filter(s => s.exercise_id === currentExercise.id)
-                                        .slice().reverse() // Show newest first
-                                        .map((set, idx, arr) => (
-                                            <div key={set.id || idx} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors group">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs font-mono">
-                                                        {arr.length - idx}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-mono font-bold text-xl">
-                                                            {set.weight_kg}<span className="text-sm text-muted-foreground ml-1">kg</span>
-                                                            <span className="mx-2 text-muted-foreground">×</span>
-                                                            {set.reps}<span className="text-sm text-muted-foreground ml-1">reps</span>
-                                                        </p>
-                                                    </div>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                size="lg"
+                                glow
+                                className="w-full h-14 text-lg font-black italic tracking-wider shadow-neon"
+                                disabled={setMutation.isPending}
+                            >
+                                <Plus className="w-6 h-6 mr-2" /> LOG SET
+                            </Button>
+                        </form>
+
+                        {/* History List */}
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground pl-2 flex items-center gap-2">
+                                <Clock className="w-4 h-4" /> Session History
+                            </h3>
+                            <div className="space-y-2">
+                                {sets
+                                    .filter(s => s.exercise_id === currentExercise.id)
+                                    .slice().reverse() // Show newest first
+                                    .map((set, idx) => (
+                                        <div key={set.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group animate-in slide-in-from-top-2 fill-mode-both" style={{ animationDelay: `${idx * 50}ms` }}>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                                    #{sets.filter(s => s.exercise_id === currentExercise.id).length - idx}
                                                 </div>
-                                                {/* Future: Delete button */}
+                                                <div>
+                                                    <span className="text-xl font-bold text-white">{set.weight_kg}<span className="text-sm font-normal text-muted-foreground ml-1">kg</span></span>
+                                                    <span className="mx-2 text-muted-foreground/30">×</span>
+                                                    <span className="text-xl font-bold text-white">{set.reps}<span className="text-sm font-normal text-muted-foreground ml-1">reps</span></span>
+                                                </div>
                                             </div>
-                                        ))
+                                            {/* RPE or other stats could go here */}
+                                        </div>
+                                    ))}
+                                {sets.filter(s => s.exercise_id === currentExercise.id).length === 0 && (
+                                    <div className="text-center py-8 text-muted-foreground text-sm italic">
+                                        No sets logged yet. Crush it!
+                                    </div>
                                 )}
                             </div>
                         </div>
+
+                        {/* Finish Button at bottom of mobile view inside the scrollable area */}
+                        <div className="lg:hidden pb-safe">
+                            <Button
+                                onClick={handleFinish}
+                                variant="secondary"
+                                size="lg"
+                                className="w-full shadow-neon-purple mt-8"
+                            >
+                                FINISH WORKOUT
+                            </Button>
+                        </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground space-y-4 p-8 border border-dashed border-border rounded-xl">
-                        <Dumbbell className="w-16 h-16 opacity-20" />
-                        <p className="text-center">Select an exercise from the {window.innerWidth < 1024 ? "queue button above" : "queue on the left"} to start lifting.</p>
-                        {/* Mobile: Show button to clear selection if stuck */}
+                    <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 p-8 border border-dashed border-white/10 rounded-3xl bg-white/5 opacity-50">
+                        <Dumbbell className="w-16 h-16 opacity-30 stroke-1" />
+                        <p className="text-sm font-medium">Select an exercise from the {window.innerWidth < 1024 ? "queue button above" : "queue on the left"} to start lifting.</p>
                         <button
-                            onClick={() => setActiveQueueId(null)}
-                            className="lg:hidden text-emerald-400 hover:underline"
+                            onClick={() => setIsSelectorOpen(true)}
+                            className="text-primary hover:underline text-xs font-bold uppercase tracking-wider"
                         >
-                            View Queue
+                            Open Library
                         </button>
                     </div>
                 )}
             </div>
-        </div >
+        </div>
     );
 }
 
@@ -606,29 +642,34 @@ function SortableQueueItem(props: { exercise: QueuedExercise, isActive: boolean,
             ref={setNodeRef}
             style={style}
             className={cn(
-                "group flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer select-none",
+                "group flex items-center justify-between p-3 rounded-xl border transition-all duration-300 cursor-pointer select-none relative overflow-hidden",
                 props.isActive
-                    ? "bg-emerald-500/10 border-emerald-500"
-                    : "bg-card border-border hover:border-emerald-500/30"
+                    ? "bg-primary/10 border-primary/50 shadow-[0_0_15px_rgba(0,242,255,0.15)]"
+                    : "bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10"
             )}
             onClick={props.onClick}
         >
-            <div className="flex items-center gap-3 overflow-hidden">
+            {/* Active Indicator Bar */}
+            {props.isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary box-shadow-neon" />}
+
+            <div className="flex items-center gap-3 overflow-hidden pl-2">
                 <div
                     {...attributes}
                     {...listeners}
-                    className="touch-none bg-muted hover:bg-muted-foreground/20 p-1 rounded cursor-grab active:cursor-grabbing"
-                    onClick={(e) => e.stopPropagation()} // Prevent selecting when just grabbing
+                    className="touch-none bg-white/5 hover:bg-white/10 p-1.5 rounded-md cursor-grab active:cursor-grabbing text-muted-foreground hover:text-white transition-colors"
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <GripVertical className="w-4 h-4 text-muted-foreground" />
+                    <GripVertical className="w-4 h-4" />
                 </div>
                 <div className="truncate">
-                    <p className={cn("font-medium truncate", props.isActive && "text-emerald-400")}>
+                    <p className={cn("font-bold truncate text-sm transition-colors", props.isActive ? "text-white" : "text-muted-foreground group-hover:text-white")}>
                         {props.exercise.name}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">{props.exercise.muscle_group}</p>
+                    <p className="text-[10px] text-muted-foreground/60 truncate font-mono uppercase tracking-wide">{props.exercise.muscle_group}</p>
                 </div>
             </div>
+
+            <ChevronRight className={cn("w-4 h-4 transition-all", props.isActive ? "text-primary translate-x-0" : "text-transparent -translate-x-2 group-hover:text-white/20 group-hover:translate-x-0")} />
         </div>
     );
 }

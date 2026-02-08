@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            DATE(w.start_time) as work_date,\n            COALESCE(SUM(s.weight_kg * s.reps), 0.0) as daily_volume\n        FROM workouts w\n        LEFT JOIN sets s ON w.id = s.workout_id\n        WHERE w.user_id = $1 AND w.end_time IS NOT NULL\n        GROUP BY DATE(w.start_time)\n        ORDER BY work_date ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "work_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 1,
+        "name": "daily_volume",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "c0ff8bae46f55afa3f6acb38056ceb4d66744c520f118754f3aa9e62d3107609"
+}

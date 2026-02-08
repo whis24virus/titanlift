@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM nutrition_logs WHERE user_id = $1 AND log_date = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "log_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 3,
+        "name": "calories_in",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "protein_g",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "carbs_g",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "fats_g",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "f0f8bed765b6d7020fa9aa10720e9ea3e3507ed5bb3ab9939edffb694d2eeacd"
+}

@@ -151,3 +151,37 @@ export async function fetchUserBadges(userId: string): Promise<UserBadge[]> {
     if (!res.ok) throw new Error("Failed to fetch badges");
     return res.json();
 }
+
+export const getSocialProfile = async (targetId: string): Promise<any> => {
+    const response = await fetch(`${API_BASE}/social/profile/${targetId}`);
+    if (!response.ok) throw new Error('Failed to fetch social profile');
+    return response.json();
+};
+
+export const updateSocialProfile = async (data: { bio?: string, instagram?: string, twitter?: string }) => {
+    const response = await fetch(`${API_BASE}/social/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update profile');
+    return response;
+};
+
+export const searchUsers = async (query: string) => {
+    const response = await fetch(`${API_BASE}/social/search?q=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Failed to search users');
+    return response.json();
+};
+
+export const followUser = async (targetId: string) => {
+    const response = await fetch(`${API_BASE}/social/follow/${targetId}`, { method: 'POST' });
+    if (!response.ok) throw new Error('Failed to follow user');
+    return response;
+};
+
+export const unfollowUser = async (targetId: string) => {
+    const response = await fetch(`${API_BASE}/social/follow/${targetId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to unfollow user');
+    return response;
+};

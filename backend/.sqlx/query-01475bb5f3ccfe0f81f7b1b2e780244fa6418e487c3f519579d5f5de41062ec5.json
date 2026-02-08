@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM template_exercises WHERE template_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "01475bb5f3ccfe0f81f7b1b2e780244fa6418e487c3f519579d5f5de41062ec5"
+}

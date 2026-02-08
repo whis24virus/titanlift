@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM user_badges WHERE user_id = $1 ORDER BY earned_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "workout_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "badge_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "earned_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "4dae6b164e4559d9b5c5c57cbb8b73cd4c08c097a2ef795fe562a79d002f6d2d"
+}

@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE users SET bio = $1, instagram_handle = $2, twitter_handle = $3 WHERE id = $4",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c613f59eaa31a8cca1120f366ac58d3667c5db9985f5be11b38a0c9817bf2624"
+}

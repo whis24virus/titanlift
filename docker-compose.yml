@@ -1,48 +1,39 @@
+version: '3.8'
+
 services:
-  # Database Service
   db:
     image: postgres:15-alpine
-    container_name: titanlift-db
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB: ${POSTGRES_DB:-titanlift}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-titanlift_social}
     ports:
       - "5432:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
-  # Backend API Service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: titanlift-backend
     restart: always
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-titanlift}
-      RUST_LOG: info
     ports:
       - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-titanlift_social}
+      RUST_LOG: debug
+      PORT: 3000
     depends_on:
-      db:
-        condition: service_healthy
+      - db
 
-  # Frontend Service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: titanlift-frontend
     restart: always
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
       - backend
 

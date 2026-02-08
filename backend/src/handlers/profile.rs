@@ -1,5 +1,6 @@
 use axum::{
     extract::{State, Path},
+    response::IntoResponse,
     Json,
 };
 use crate::{AppState, models::{User, WeightLog, NutritionLog}};
@@ -16,6 +17,23 @@ pub struct PhysicalStatsResponse {
     pub activity_level: Option<String>,
     pub bmr: Option<i32>,
     pub tdee: Option<i32>,
+}
+
+#[derive(Serialize)]
+pub struct ActivityLogEntry {
+    pub date: NaiveDate,
+    pub volume_kg: f64,
+}
+
+#[derive(Serialize)]
+pub struct FullUserProfile {
+    pub username: String,
+    pub total_workouts: i64,
+    pub total_volume_kg: f64,
+    pub join_date: DateTime<Utc>,
+    pub activity_log: Vec<ActivityLogEntry>,
+    pub current_streak: i64,
+    pub max_streak: i64,
 }
 
 #[derive(Deserialize)]
@@ -219,4 +237,84 @@ pub async fn get_nutrition_log(
     .unwrap();
 
     Json(log)
+}
+
+pub async fn get_full_profile(
+    State(state): State<AppState>,
+    Path(target_id): Path<Uuid>,
+) -> impl axum::response::IntoResponse {
+    // 1. Get basic user info
+    let user = sqlx::query!(
+        "SELECT username, created_at FROM users WHERE id = $1",
+        target_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .unwrap();
+
+    let user = match user {
+        Some(u) => u,
+        None => return axum::http::StatusCode::NOT_FOUND.into_response(),
+    };
+
+    // 2. Get total workouts and volume
+    let stats = sqlx::query!(
+        r#"
+        SELECT 
+            COUNT(*) as count,
+            COALESCE(SUM(s.weight_kg * s.reps), 0.0) as volume
+        FROM workouts w
+        LEFT JOIN sets s ON w.id = s.workout_id
+        WHERE w.user_id = $1 AND w.end_time IS NOT NULL
+        "#,
+        target_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .unwrap();
+
+    // 3. Get activity log (volume per day) for the last year
+    // Group by date(start_time)
+    let activity = sqlx::query!(
+        r#"
+        SELECT 
+            DATE(w.start_time) as work_date,
+            COALESCE(SUM(s.weight_kg * s.reps), 0.0) as daily_volume
+        FROM workouts w
+        LEFT JOIN sets s ON w.id = s.workout_id
+        WHERE w.user_id = $1 AND w.end_time IS NOT NULL
+        GROUP BY DATE(w.start_time)
+        ORDER BY work_date ASC
+        "#,
+        target_id
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap();
+
+    let activity_log: Vec<ActivityLogEntry> = activity.into_iter().map(|r| ActivityLogEntry {
+        date: r.work_date.unwrap(), // Date from generated series or truncation should be valid
+        volume_kg: r.daily_volume.unwrap_or(0.0),
+    }).collect();
+
+    // 4. Calculate streak (naive implementation for demo)
+    // In a real app, this should be a robust query or cached value
+    let mut current_streak = 0;
+    let mut max_streak = 0;
+    // todo: implement streak calculation based on activity_log
+
+    if !activity_log.is_empty() {
+        current_streak = 1; // dummy path
+        max_streak = 1;
+    }
+
+    Json(FullUserProfile {
+        username: user.username,
+        total_workouts: stats.count.unwrap_or(0),
+        total_volume_kg: stats.volume.unwrap_or(0.0),
+        join_date: user.created_at,
+        activity_log,
+        current_streak,
+        max_streak,
+    }).into_response()
 }

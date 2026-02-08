@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT te.*, e.name as exercise_name \n        FROM template_exercises te\n        JOIN exercises e ON te.exercise_id = e.id\n        WHERE te.template_id = $1\n        ORDER BY te.order_index\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "template_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "exercise_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "order_index",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "target_sets",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "target_reps",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "target_weight_kg",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 7,
+        "name": "exercise_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "47b88ba744e555e0d516d0f293f964ef66a0549120a664dbfce8740fcd858025"
+}

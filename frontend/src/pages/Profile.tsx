@@ -2,9 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trophy, Activity, Calendar, Flame, Zap, Scale, Utensils } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
-import { fetchWorkoutHistory, fetchPhysicalStats, updatePhysicalStats, fetchWeightHistory, fetchNutritionLog, logNutrition } from '../api/client';
-import { Clock } from 'lucide-react';
+import { fetchWorkoutHistory, fetchPhysicalStats, updatePhysicalStats, fetchWeightHistory, fetchNutritionLog, logNutrition, getSocialProfile, updateSocialProfile } from '../api/client';
+import { Clock, Instagram, Twitter, Users } from 'lucide-react';
 import { useState } from 'react';
+import { UserSearch } from '../components/UserSearch';
 
 // Hardcoded user ID for demo
 const USER_ID = "763b9c95-4bae-4044-9d30-7ae513286b37";
@@ -67,6 +68,22 @@ export function Profile() {
     const [editForm, setEditForm] = useState({ height_cm: 0, weight_kg: 0, gender: 'male', activity_level: 'moderate' });
     const [calorieInput, setCalorieInput] = useState("");
 
+    const { data: socialProfile, refetch: refetchSocial } = useQuery({
+        queryKey: ['socialProfile', USER_ID],
+        queryFn: () => getSocialProfile(USER_ID)
+    });
+
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [socialForm, setSocialForm] = useState({ bio: '', instagram: '', twitter: '' });
+
+    const updateSocialMutation = useMutation({
+        mutationFn: updateSocialProfile,
+        onSuccess: () => {
+            setIsEditingProfile(false);
+            refetchSocial();
+        }
+    });
+
     if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
 
     const tdee = stats?.tdee || 2000;
@@ -75,12 +92,118 @@ export function Profile() {
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto pb-20">
-            <header>
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-                    {profile?.username}'s Profile
-                </h1>
-                <p className="text-muted-foreground mt-1">Your journey to becoming a Titan</p>
+            <header className="relative">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                            {profile?.username}'s Profile
+                        </h1>
+                        <p className="text-muted-foreground mt-1">{socialProfile?.bio || "Your journey to becoming a Titan"}</p>
+
+                        <div className="flex items-center gap-4 mt-3 text-sm">
+                            <div className="flex items-center gap-1 text-muted-foreground hover:text-white transition-colors cursor-pointer">
+                                <Users className="w-4 h-4" />
+                                <span className="font-bold text-white">{socialProfile?.followers || 0}</span> Followers
+                            </div>
+                            <div className="flex items-center gap-1 text-muted-foreground hover:text-white transition-colors cursor-pointer">
+                                <span className="font-bold text-white">{socialProfile?.following || 0}</span> Following
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-4">
+                            {socialProfile?.instagram && (
+                                <a href={`https://instagram.com/${socialProfile.instagram}`} target="_blank" rel="noreferrer" className="p-2 bg-pink-500/10 text-pink-400 rounded-lg hover:bg-pink-500/20 transition-colors">
+                                    <Instagram className="w-4 h-4" />
+                                </a>
+                            )}
+                            {socialProfile?.twitter && (
+                                <a href={`https://twitter.com/${socialProfile.twitter}`} target="_blank" rel="noreferrer" className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors">
+                                    <Twitter className="w-4 h-4" />
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setSocialForm({
+                                bio: socialProfile?.bio || '',
+                                instagram: socialProfile?.instagram || '',
+                                twitter: socialProfile?.twitter || ''
+                            });
+                            setIsEditingProfile(true);
+                        }}
+                        className="text-xs bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 rounded-lg font-medium transition-colors"
+                    >
+                        Edit Profile
+                    </button>
+                </div>
+
+                <div className="mt-6">
+                    <UserSearch />
+                </div>
             </header>
+
+            {isEditingProfile && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-card border border-border w-full max-w-md p-6 rounded-2xl shadow-xl space-y-4 relative z-[101]">
+                        <h2 className="text-xl font-bold">Edit Profile</h2>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-muted-foreground mb-1">Bio</label>
+                                <textarea
+                                    className="w-full bg-background border border-border rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 min-h-[80px]"
+                                    value={socialForm.bio}
+                                    onChange={e => setSocialForm({ ...socialForm, bio: e.target.value })}
+                                    placeholder="Tell us about your fitness journey..."
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-muted-foreground mb-1">Instagram Handle</label>
+                                    <div className="relative">
+                                        <Instagram className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                                        <input
+                                            className="w-full bg-background border border-border rounded-lg pl-9 p-2 text-sm focus:ring-2 focus:ring-pink-500"
+                                            value={socialForm.instagram}
+                                            onChange={e => setSocialForm({ ...socialForm, instagram: e.target.value })}
+                                            placeholder="username"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-muted-foreground mb-1">Twitter Handle</label>
+                                    <div className="relative">
+                                        <Twitter className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                                        <input
+                                            className="w-full bg-background border border-border rounded-lg pl-9 p-2 text-sm focus:ring-2 focus:ring-blue-500"
+                                            value={socialForm.twitter}
+                                            onChange={e => setSocialForm({ ...socialForm, twitter: e.target.value })}
+                                            placeholder="username"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => setIsEditingProfile(false)}
+                                className="flex-1 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => updateSocialMutation.mutate(socialForm)}
+                                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg font-medium text-white shadow-lg shadow-purple-500/20"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Layout Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

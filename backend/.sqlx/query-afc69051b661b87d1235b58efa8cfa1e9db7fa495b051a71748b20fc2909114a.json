@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO nutrition_logs (user_id, log_date, calories_in, protein_g, carbs_g, fats_g)\n        VALUES ($1, $2, $3, $4, $5, $6)\n        ON CONFLICT (user_id, log_date) \n        DO UPDATE SET \n            calories_in = nutrition_logs.calories_in + EXCLUDED.calories_in,\n            protein_g = COALESCE(nutrition_logs.protein_g, 0) + COALESCE(EXCLUDED.protein_g, 0),\n            carbs_g = COALESCE(nutrition_logs.carbs_g, 0) + COALESCE(EXCLUDED.carbs_g, 0),\n            fats_g = COALESCE(nutrition_logs.fats_g, 0) + COALESCE(EXCLUDED.fats_g, 0)\n        RETURNING *\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "log_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 3,
+        "name": "calories_in",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "protein_g",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "carbs_g",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "fats_g",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "afc69051b661b87d1235b58efa8cfa1e9db7fa495b051a71748b20fc2909114a"
+}

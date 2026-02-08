@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT MAX(s.weight_kg) as max_val \n        FROM sets s\n        JOIN workouts w ON s.workout_id = w.id\n        WHERE s.exercise_id = $1 AND w.user_id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "max_val",
+        "type_info": "Float4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "1689d644c9c096271b0e0a087854f14d3a9ce8818a8da11fc9e13b9adeccd59d"
+}

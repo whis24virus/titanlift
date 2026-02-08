@@ -13,6 +13,9 @@ pub struct User {
     pub date_of_birth: Option<chrono::NaiveDate>,
     pub height_cm: Option<f64>,
     pub current_weight_kg: Option<f64>,
+    pub bio: Option<String>,
+    pub instagram_handle: Option<String>,
+    pub twitter_handle: Option<String>,
     pub activity_level: Option<String>,
     pub created_at: DateTime<Utc>,
 }

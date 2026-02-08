@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, name, start_time, end_time, \n        COALESCE((SELECT SUM(weight_kg * reps) FROM sets WHERE workout_id = w.id), 0.0) as volume,\n        (SELECT COUNT(*) FROM sets WHERE workout_id = w.id) as exercise_count\n        FROM workouts w\n        WHERE w.user_id = $1 AND w.end_time IS NOT NULL\n        ORDER BY w.start_time DESC\n        LIMIT 20\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "start_time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "end_time",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "volume",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "exercise_count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      null,
+      null
+    ]
+  },
+  "hash": "05c202a2cce79f711340b483a9a393f87e0f0b3f0404fdf2681d9f4a73a4ab06"
+}

@@ -4,42 +4,56 @@
 
 @layer base {
   :root {
-    /* Premium Dark Theme (Deep Blue/Black Base) */
-    --background: 230 25% 5%;
-    /* #0a0b10 - Deep dark blue/black */
-    --foreground: 210 40% 98%;
+    /* Liquid Glass Theme (Deep Navy/Cyber-Athletic) */
+    --background: 220 30% 6%;
+    /* #0B0E14 Deep Navy */
+    --foreground: 0 0% 100%;
+    /* Pure White */
 
-    --card: 230 25% 8%;
-    /* Slightly lighter than bg */
+    --card: 220 25% 10%;
+    /* Darker base for cards before glass effect */
     --card-foreground: 210 40% 98%;
 
-    --popover: 230 25% 8%;
+    --popover: 220 25% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 160 84% 39%;
-    /* Emerald Green - Energetic */
-    --primary-foreground: 0 0% 100%;
+    --primary: 183 100% 50%;
+    /* #00F2FF Cyan Neon */
+    --primary-foreground: 220 30% 6%;
 
-    --secondary: 230 20% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 286 100% 50%;
+    /* #BC00FF Purple Neon */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 230 20% 12%;
+    --muted: 220 20% 12%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 230 20% 15%;
+    --accent: 33 100% 50%;
+    /* #FF8C00 Gold/Orange */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 230 20% 12%;
-    /* Subtle border */
-    --input: 230 20% 12%;
-    --ring: 160 84% 39%;
+    --border: 220 20% 12%;
+    --input: 220 20% 12%;
+    --ring: 183 100% 50%;
 
-    --radius: 1rem;
-    /* More rounded */
+    --radius: 1.5rem;
+    /* 24px for large cards */
   }
+}
+
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-xl border border-white/5 shadow-xl;
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+}
+
+.neon-border {
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 /* Custom Scrollbar for Webkit */

@@ -11,8 +11,8 @@ use dotenvy::dotenv;
 use std::env;
 
 #[derive(Clone)]
-struct AppState {
-    db: PgPool,
+pub struct AppState {
+    pub db: PgPool,
 }
 
 mod models;
@@ -57,13 +57,17 @@ async fn main() {
         .route("/api/templates/:id/exercises", axum::routing::post(handlers::templates::add_template_exercise).put(handlers::templates::update_template_exercises))
         .route("/api/workouts/:id/finish", axum::routing::post(handlers::workouts::finish_workout))
         .route("/api/workouts/active", axum::routing::get(handlers::workouts::get_active_workout))
-        .route("/api/profile/:id", axum::routing::get(handlers::social::get_profile))
+        .route("/api/profile/:id", axum::routing::get(handlers::profile::get_full_profile))
         .route("/api/profile/:id/history", axum::routing::get(handlers::social::get_workout_history))
         .route("/api/profile/:id/stats", axum::routing::get(handlers::profile::get_physical_stats).post(handlers::profile::update_physical_stats))
         .route("/api/profile/:id/weight", axum::routing::get(handlers::profile::get_weight_history))
         .route("/api/profile/:id/nutrition", axum::routing::get(handlers::profile::get_nutrition_log).post(handlers::profile::log_nutrition))
         .route("/api/leaderboard", axum::routing::get(handlers::social::get_leaderboard))
         .route("/api/profile/:id/badges", axum::routing::get(handlers::gamification::get_user_badges))
+        .route("/api/social/follow/:id", axum::routing::post(handlers::social::follow_user).delete(handlers::social::unfollow_user))
+        .route("/api/social/profile", axum::routing::put(handlers::social::update_social_profile))
+        .route("/api/social/profile/:id", axum::routing::get(handlers::social::get_profile))
+        .route("/api/social/search", axum::routing::get(handlers::social::search_users))
 
         .layer(TraceLayer::new_for_http())
         .with_state(state);

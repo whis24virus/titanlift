@@ -1,211 +1,251 @@
 use axum::{
-    extract::{State, Path},
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
     Json,
 };
-use crate::{AppState, models::User};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use uuid::Uuid;
-use sqlx::FromRow;
-use chrono::{DateTime, Utc, NaiveDate};
+
+use crate::AppState;
 
 #[derive(Serialize)]
-pub struct DailyActivity {
-    pub date: String,
-    pub volume_kg: f64,
+pub struct FollowStats {
+    pub followers: i64,
+    pub following: i64,
 }
 
-#[derive(Serialize)]
-pub struct WorkoutHistoryEntry {
+#[derive(Serialize, sqlx::FromRow)]
+pub struct UserProfileSocial {
     pub id: Uuid,
-    pub name: Option<String>,
-    pub start_time: DateTime<Utc>,
-    pub end_time: Option<DateTime<Utc>>,
-    pub total_volume_kg: f64,
-    pub exercise_count: i64,
+    pub username: String,
+    pub bio: Option<String>,
+    pub instagram: Option<String>,
+    pub twitter: Option<String>,
+    pub followers: i64,
+    pub following: i64,
+    pub is_following: bool, // Does the requester follow this user?
 }
 
-#[derive(Serialize)]
-pub struct UserProfile {
-    pub username: String,
-    pub total_workouts: i64,
-    pub total_volume_kg: f64,
-    pub join_date: DateTime<Utc>,
-    pub activity_log: Vec<DailyActivity>,
-    pub current_streak: i64,
-    pub max_streak: i64,
+// Request payload for update profile
+#[derive(Deserialize)]
+pub struct UpdateSocialProfileRequest {
+    pub bio: Option<String>,
+    pub instagram: Option<String>,
+    pub twitter: Option<String>,
 }
 
-#[derive(Serialize, FromRow)]
-pub struct LeaderboardEntry {
-    pub username: String,
-    pub total_volume_kg: Option<f64>,
-    pub rank: Option<i64>,
+pub async fn follow_user(
+    State(state): State<AppState>,
+    Path(target_id): Path<Uuid>,
+    // In a real app, user_id comes from Auth middleware
+    // We'll simulate auth via a header or just hardcode for demo if needed
+    // queries override for now
+) -> impl IntoResponse {
+    // HARDCODED DEMO USER ID for now
+    let user_id = Uuid::parse_str("763b9c95-4bae-4044-9d30-7ae513286b37").unwrap();
+
+    let result = sqlx::query!(
+        "INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        user_id,
+        target_id
+    )
+    .execute(&state.db)
+    .await;
+
+    match result {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
+}
+
+pub async fn unfollow_user(
+    State(state): State<AppState>,
+    Path(target_id): Path<Uuid>,
+) -> impl IntoResponse {
+    let user_id = Uuid::parse_str("763b9c95-4bae-4044-9d30-7ae513286b37").unwrap();
+
+    let result = sqlx::query!(
+        "DELETE FROM follows WHERE follower_id = $1 AND following_id = $2",
+        user_id,
+        target_id
+    )
+    .execute(&state.db)
+    .await;
+
+    match result {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
 }
 
 pub async fn get_profile(
     State(state): State<AppState>,
-    Path(user_id): Path<Uuid>,
-) -> Json<UserProfile> {
-    let user = sqlx::query_as!(
-        User,
-        "SELECT * FROM users WHERE id = $1",
-        user_id
-    )
-    .fetch_one(&state.db)
-    .await
-    .unwrap();
+    Path(target_id): Path<Uuid>,
+) -> impl IntoResponse {
+    let current_user_id = Uuid::parse_str("763b9c95-4bae-4044-9d30-7ae513286b37").unwrap();
 
-    // Fetch basic stats
-    let stats = sqlx::query!(
-        r#"
-        SELECT
-            COUNT(DISTINCT w.id) as workout_count,
-            COALESCE(SUM(s.weight_kg * s.reps), 0) as total_volume
-        FROM workouts w
-        LEFT JOIN sets s ON w.id = s.workout_id
-        WHERE w.user_id = $1
-        "#,
-        user_id
-    )
-    .fetch_one(&state.db)
-    .await
-    .unwrap();
-
-    // Fetch daily activity for the last 365 days
-    let activity = sqlx::query!(
-        r#"
-        SELECT
-            DATE(w.start_time) as work_date,
-            COALESCE(SUM(s.weight_kg * s.reps), 0) as daily_volume
-        FROM workouts w
-        LEFT JOIN sets s ON w.id = s.workout_id
-        WHERE w.user_id = $1 AND w.start_time > NOW() - INTERVAL '1 year'
-        GROUP BY work_date
-        ORDER BY work_date ASC
-        "#,
-        user_id
-    )
-    .fetch_all(&state.db)
-    .await
-    .unwrap_or(vec![]);
-
-    let activity_log: Vec<DailyActivity> = activity.iter().map(|rec| DailyActivity {
-        date: rec.work_date.map(|d| d.to_string()).unwrap_or_default(),
-        volume_kg: rec.daily_volume.unwrap_or(0.0),
-    }).collect();
-
-    // Calculate streaks (simplified logic)
-    let mut current_streak = 0;
-    let mut max_streak = 0;
-    let mut temp_streak = 0;
-    let mut last_date: Option<NaiveDate> = None;
-    
-    // Sort activity by date just to be safe
-    let mut sorted_dates: Vec<NaiveDate> = activity.iter()
-        .filter_map(|r| r.work_date)
-        .collect();
-    sorted_dates.sort();
-    sorted_dates.dedup(); // Remove multiple workouts on same day
-
-    for date in sorted_dates {
-        if let Some(prev) = last_date {
-            let diff = date.signed_duration_since(prev).num_days();
-            if diff == 1 {
-                temp_streak += 1;
-            } else {
-                temp_streak = 1;
-            }
-        } else {
-            temp_streak = 1;
-        }
-        
-        if temp_streak > max_streak {
-            max_streak = temp_streak;
-        }
-        last_date = Some(date);
-    }
-    
-    // Check if current streak is active (today or yesterday)
-    let today = Utc::now().date_naive();
-    if let Some(last) = last_date {
-        let diff = today.signed_duration_since(last).num_days();
-        if diff <= 1 {
-            current_streak = temp_streak;
-        } else {
-            current_streak = 0;
-        }
-    }
-
-    Json(UserProfile {
-        username: user.username,
-        total_workouts: stats.workout_count.unwrap_or(0),
-        total_volume_kg: stats.total_volume.unwrap_or(0.0),
-        join_date: user.created_at,
-        activity_log,
-        current_streak,
-        max_streak,
-    })
-}
-
-pub async fn get_leaderboard(
-    State(state): State<AppState>,
-) -> Json<Vec<LeaderboardEntry>> {
-    let leaderboard = sqlx::query_as!(
-        LeaderboardEntry,
+    // Fetch user details + social stats
+    let user = sqlx::query_as::<_, UserProfileSocial>(
         r#"
         SELECT 
-            u.username,
-            COALESCE(SUM(s.weight_kg * s.reps), 0) as total_volume_kg,
-            RANK() OVER (ORDER BY SUM(s.weight_kg * s.reps) DESC)::BIGINT as rank
+            u.id, 
+            u.username, 
+            u.bio, 
+            u.instagram_handle as instagram, 
+            u.twitter_handle as twitter,
+            COALESCE((SELECT COUNT(*) FROM follows WHERE following_id = u.id), 0) as followers,
+            COALESCE((SELECT COUNT(*) FROM follows WHERE follower_id = u.id), 0) as following,
+            COALESCE(EXISTS (SELECT 1 FROM follows WHERE follower_id = $2 AND following_id = u.id), false) as is_following
         FROM users u
-        LEFT JOIN workouts w ON u.id = w.user_id
-        LEFT JOIN sets s ON w.id = s.workout_id
-        GROUP BY u.id, u.username
-        ORDER BY total_volume_kg DESC
-        LIMIT 10
+        WHERE u.id = $1
         "#
     )
-    .fetch_all(&state.db)
+    .bind(target_id)
+    .bind(current_user_id)
+    .fetch_optional(&state.db)
     .await
-    .unwrap_or(vec![]);
+    .unwrap();
 
-    Json(leaderboard)
+    match user {
+        Some(u) => Json(u).into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+pub async fn update_social_profile(
+    State(state): State<AppState>,
+    Json(payload): Json<UpdateSocialProfileRequest>,
+) -> impl IntoResponse {
+    let user_id = Uuid::parse_str("763b9c95-4bae-4044-9d30-7ae513286b37").unwrap();
+
+    let result = sqlx::query!(
+        "UPDATE users SET bio = $1, instagram_handle = $2, twitter_handle = $3 WHERE id = $4",
+        payload.bio,
+        payload.instagram,
+        payload.twitter,
+        user_id
+    )
+    .execute(&state.db)
+    .await;
+
+    match result {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+    }
 }
 
 pub async fn get_workout_history(
     State(state): State<AppState>,
-    Path(user_id): Path<Uuid>,
-) -> Json<Vec<WorkoutHistoryEntry>> {
+    Path(target_id): Path<Uuid>,
+) -> impl IntoResponse {
     let history = sqlx::query!(
         r#"
-        SELECT 
-            w.id,
-            w.name,
-            w.start_time,
-            w.end_time,
-            COALESCE(SUM(s.weight_kg * s.reps), 0) as total_volume,
-            COUNT(DISTINCT s.exercise_id) as exercise_count
+        SELECT id, name, start_time, end_time, 
+        COALESCE((SELECT SUM(weight_kg * reps) FROM sets WHERE workout_id = w.id), 0.0) as volume,
+        (SELECT COUNT(*) FROM sets WHERE workout_id = w.id) as exercise_count
         FROM workouts w
-        LEFT JOIN sets s ON w.id = s.workout_id
         WHERE w.user_id = $1 AND w.end_time IS NOT NULL
-        GROUP BY w.id
         ORDER BY w.start_time DESC
         LIMIT 20
         "#,
-        user_id
+        target_id
     )
     .fetch_all(&state.db)
-    .await
-    .unwrap_or(vec![]);
+    .await;
 
-    let response = history.iter().map(|rec| WorkoutHistoryEntry {
-        id: rec.id,
-        name: rec.name.clone(),
-        start_time: rec.start_time.unwrap_or(Utc::now()), // Should always have start time
-        end_time: rec.end_time,
-        total_volume_kg: rec.total_volume.unwrap_or(0.0),
-        exercise_count: rec.exercise_count.unwrap_or(0),
-    }).collect();
+    match history {
+        Ok(recs) => {
+            let response = recs.into_iter().map(|r| {
+                serde_json::json!({
+                    "id": r.id,
+                    "name": r.name,
+                    "start_time": r.start_time,
+                    "end_time": r.end_time,
+                    "total_volume_kg": r.volume.unwrap_or(0.0),
+                    "exercise_count": r.exercise_count.unwrap_or(0)
+                })
+            }).collect::<Vec<_>>();
+            Json(response).into_response()
+        },
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response()
+    }
+}
 
-    Json(response)
+pub async fn get_leaderboard(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let leaderboard = sqlx::query!(
+        r#"
+        SELECT u.id, u.username, 
+        COALESCE(SUM(s.weight_kg * s.reps), 0.0) as total_volume
+        FROM users u
+        LEFT JOIN workouts w ON u.id = w.user_id
+        LEFT JOIN sets s ON w.id = s.workout_id
+        GROUP BY u.id, u.username
+        ORDER BY total_volume DESC
+        LIMIT 10
+        "#
+    )
+    .fetch_all(&state.db)
+    .await;
+
+
+    match leaderboard {
+        Ok(recs) => {
+             let response = recs.into_iter().map(|r| {
+                serde_json::json!({
+                    "id": r.id,
+                    "username": r.username,
+                    "total_volume": r.total_volume.unwrap_or(0.0)
+                })
+            }).collect::<Vec<_>>();
+            Json(response).into_response()
+        },
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response()
+    }
+}
+
+#[derive(Deserialize)]
+pub struct SearchUserQuery {
+    pub q: String,
+}
+
+pub async fn search_users(
+    State(state): State<AppState>,
+    axum::extract::Query(query): axum::extract::Query<SearchUserQuery>,
+) -> impl IntoResponse {
+    let current_user_id = Uuid::parse_str("763b9c95-4bae-4044-9d30-7ae513286b37").unwrap();
+    let search_term = format!("%{}%", query.q);
+
+    let users = sqlx::query!(
+        r#"
+        SELECT u.id, u.username, u.bio, u.instagram_handle, u.twitter_handle,
+        EXISTS (SELECT 1 FROM follows WHERE follower_id = $2 AND following_id = u.id) as is_following
+        FROM users u
+        WHERE u.username ILIKE $1 AND u.id != $2
+        LIMIT 10
+        "#,
+        search_term,
+        current_user_id
+    )
+    .fetch_all(&state.db)
+    .await;
+
+    match users {
+        Ok(recs) => {
+            let response = recs.into_iter().map(|r| {
+                // Map to same structure as profile or specific search result
+                serde_json::json!({
+                    "id": r.id,
+                    "username": r.username,
+                    "bio": r.bio,
+                    "is_following": r.is_following.unwrap_or(false)
+                })
+            }).collect::<Vec<_>>();
+            Json(response).into_response()
+        },
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response()
+    }
 }
