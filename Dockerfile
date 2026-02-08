@@ -8,7 +8,7 @@ COPY frontend ./
 RUN npm run build
 
 # 2. Build Backend
-FROM rust:1.80 as backend-builder
+FROM rust:latest as backend-builder
 WORKDIR /usr/src/app
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 COPY backend/Cargo.toml ./
