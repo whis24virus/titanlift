@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://titanlift-production.up.railway.app/api/:path*"
+            "destination": "https://liftclonedeploy-production.up.railway.app/api/:path*"
         },
         {
             "source": "/(.*)",
