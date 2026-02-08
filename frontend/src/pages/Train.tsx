@@ -52,47 +52,6 @@ function RewardToast({ message, subtext, onClose }: { message: string, subtext?:
     );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _BadgeModal({ badges, onClose }: { badges: string[], onClose: () => void }) {
-    if (badges.length === 0) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in">
-            <Card className="w-full max-w-md mx-4 overflow-hidden border-secondary/30 shadow-[0_0_50px_rgba(188,0,255,0.2)]">
-                <div className="p-8 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-secondary/20 to-transparent" />
-                    <div className="relative z-10">
-                        <Trophy className="w-16 h-16 text-secondary mx-auto mb-4 drop-shadow-[0_0_15px_rgba(188,0,255,0.5)]" />
-                        <h2 className="text-3xl font-black text-white mb-2 italic tracking-tighter">SESSION COMPLETE</h2>
-                        <p className="text-secondary/80 font-mono text-sm uppercase tracking-widest">You earned {badges.length} new badges!</p>
-                    </div>
-                </div>
-                <div className="p-6 space-y-4">
-                    {badges.map(badge => (
-                        <div key={badge} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/5 hover:border-secondary/50 transition-colors group">
-                            <div className="p-3 bg-secondary/10 rounded-full group-hover:bg-secondary/20 transition-colors">
-                                <Medal className="w-6 h-6 text-secondary" />
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-lg text-white group-hover:text-secondary transition-colors">{badge}</h4>
-                                <p className="text-xs text-muted-foreground">{BADGE_DESCRIPTIONS[badge] || "Great Achievement!"}</p>
-                            </div>
-                        </div>
-                    ))}
-                    <Button
-                        onClick={onClose}
-                        variant="secondary"
-                        size="lg"
-                        className="w-full font-black shadow-neon-purple mt-4"
-                    >
-                        AWESOME
-                    </Button>
-                </div>
-            </Card>
-        </div>
-    );
-}
-
 function WorkoutTimer({ startTime }: { startTime: string }) {
     const [elapsed, setElapsed] = useState(0);
 
