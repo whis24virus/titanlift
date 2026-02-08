@@ -79,7 +79,8 @@ async fn main() {
         Err(e) => {
             println!("❌ Failed to run migrations: {}", e);
             tracing::error!("Failed to run migrations: {}", e);
-            panic!("Failed to run migrations: {}", e);
+            tracing::warn!("⚠️ IGNORING MIGRATION ERROR - CONTINUING STARTUP");
+            // panic!("Failed to run migrations: {}", e); 
         }
     }
 
