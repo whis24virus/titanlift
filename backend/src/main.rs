@@ -69,6 +69,12 @@ async fn main() {
         .route("/api/social/profile/:id", axum::routing::get(handlers::social::get_profile))
         .route("/api/social/search", axum::routing::get(handlers::social::search_users))
 
+        .layer(
+            tower_http::cors::CorsLayer::new()
+                .allow_origin(tower_http::cors::Any)
+                .allow_methods(tower_http::cors::Any)
+                .allow_headers(tower_http::cors::Any),
+        )
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
