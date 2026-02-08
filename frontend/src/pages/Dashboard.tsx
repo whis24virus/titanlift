@@ -1,6 +1,5 @@
-import { Activity, Flame, Zap, TrendingUp, ChevronRight, Dumbbell } from "lucide-react";
+import { Activity, Flame, Zap, TrendingUp, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";

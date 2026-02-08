@@ -100,7 +100,8 @@ function NavLink({ to, icon, label }: { to: string; icon: React.ReactNode; label
     );
 }
 
-function NavLinkMobile({ to, icon, label, style }: { to: string; icon: React.ReactNode; label: string; style?: React.CSSProperties }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function NavLinkMobile({ to, icon, label: _label, style }: { to: string; icon: React.ReactNode; label: string; style?: React.CSSProperties }) {
     return (
         <ReactNavLink
             to={to}

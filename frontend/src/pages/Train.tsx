@@ -21,6 +21,14 @@ interface QueuedExercise extends Exercise {
     queueId: string; // Unique ID for DnD
 }
 
+const BADGE_DESCRIPTIONS: Record<string, string> = {
+    "Titan Volume": "Lifted 10,000kg in one session!",
+    "Heavy Lifter": "Lifted 5,000kg in one session!",
+    "Marathoner": "Workout lasted over 90 minutes!",
+    "Speed Demon": "Fast and heavy lifting!",
+    "Volume Warrior": "Completed 20+ sets!",
+};
+
 // Fallback images (Anime Style) - Local Assets removed as we use CSS gradients now
 
 function RewardToast({ message, subtext, onClose }: { message: string, subtext?: string, onClose: () => void }) {
@@ -44,7 +52,8 @@ function RewardToast({ message, subtext, onClose }: { message: string, subtext?:
     );
 }
 
-function BadgeModal({ badges, onClose }: { badges: string[], onClose: () => void }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _BadgeModal({ badges, onClose }: { badges: string[], onClose: () => void }) {
     if (badges.length === 0) return null;
 
     return (
@@ -115,7 +124,8 @@ export function Train() {
 
     // Reward State
     const [reward, setReward] = useState<{ message: string, subtext: string } | null>(null);
-    const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_earnedBadges, _setEarnedBadges] = useState<string[]>([]);
 
     // Set input state
     const [weight, setWeight] = useState<number>(0);
@@ -207,7 +217,7 @@ export function Train() {
 
             // Show badges if any
             if (res.badges && res.badges.length > 0) {
-                setEarnedBadges(res.badges);
+                _setEarnedBadges(res.badges);
             } else {
                 if (window.innerWidth < 1024) {
                     // Mobile: go to profile
@@ -483,7 +493,7 @@ export function Train() {
                                 <div className="flex items-center gap-4">
                                     <div className="text-right hidden md:block">
                                         <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Session Timer</div>
-                                        <WorkoutTimer startTime={activeWorkout.start_time} />
+                                        <WorkoutTimer startTime={activeWorkout.start_time || new Date().toISOString()} />
                                     </div>
                                 </div>
                             </div>

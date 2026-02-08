@@ -53,15 +53,15 @@ You can host this entire stack for **free** by splitting the services across spe
    - `VITE_API_BASE_URL`: Your Render Backend URL from Step 2 (e.g., `https://titanlift-backend.onrender.com`).
    > **Note:** The current frontend code proxies `/api` calls. For production, you may need to update `frontend/src/api/client.ts` to use a full URL if not on the same domain, OR configure Vercel Rewrites.
 
-#### Setting up Vercel Rewrite (Recommended)
-To avoid CORS issues, simple add a `vercel.json` to your `frontend` folder:
+#### Vercel Rewrite (Already Configured)
+I have added a `vercel.json` to your `frontend` folder with the following content:
 
 ```json
 {
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-RENDER-BACKEND-URL.onrender.com/api/:path*"
+      "destination": "https://YOUR-RAILWAY-APP-URL.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",
@@ -70,6 +70,8 @@ To avoid CORS issues, simple add a `vercel.json` to your `frontend` folder:
   ]
 }
 ```
+
+> **CRITICAL:** You must update the `destination` URL in `frontend/vercel.json` with your actual Railway backend URL after deploying the backend. Then push the change to GitHub.
 
 ---
 

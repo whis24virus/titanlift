@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchAllSets, fetchUserBadges } from '../api/client';
 import { Car, Truck, Trophy, Rocket, Component, Medal, Star, Award } from 'lucide-react';
 import { cn } from '../lib/utils';
-import type { UserBadge } from '../api/types';
+// UserBadge type used implicitly by fetchUserBadges return type
 
 // Hardcoded user ID for demo
 const DEMO_USER_ID = "763b9c95-4bae-4044-9d30-7ae513286b37";
