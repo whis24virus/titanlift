@@ -23,25 +23,65 @@ mod handlers;
 async fn main() {
     dotenv().ok();
     
-    // Initialize tracing
+    // Initialize tracing FIRST so we can see logs
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    println!("🚀 TitanLift Backend Starting...");
+    tracing::info!("TitanLift Backend Starting...");
 
-    // Connect to database
-    let pool = PgPoolOptions::new()
+    // Get DATABASE_URL with explicit error message
+    let database_url = match env::var("DATABASE_URL") {
+        Ok(url) => {
+            println!("✅ DATABASE_URL is set");
+            tracing::info!("DATABASE_URL is set (length: {})", url.len());
+            url
+        }
+        Err(_) => {
+            println!("❌ DATABASE_URL is NOT set!");
+            tracing::error!("DATABASE_URL environment variable is not set!");
+            panic!("DATABASE_URL must be set");
+        }
+    };
+
+    // Connect to database with retry logic
+    println!("📡 Connecting to database...");
+    tracing::info!("Connecting to database...");
+    
+    let pool = match PgPoolOptions::new()
         .max_connections(5)
+        .acquire_timeout(std::time::Duration::from_secs(30))
         .connect(&database_url)
         .await
-        .expect("Failed to connect to database");
+    {
+        Ok(pool) => {
+            println!("✅ Database connected successfully!");
+            tracing::info!("Database connected successfully!");
+            pool
+        }
+        Err(e) => {
+            println!("❌ Failed to connect to database: {}", e);
+            tracing::error!("Failed to connect to database: {}", e);
+            panic!("Failed to connect to database: {}", e);
+        }
+    };
 
-    // Run migrations
-    sqlx::migrate!()
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
+    // Run migrations with explicit error handling
+    println!("🔄 Running database migrations...");
+    tracing::info!("Running database migrations...");
+    
+    match sqlx::migrate!().run(&pool).await {
+        Ok(_) => {
+            println!("✅ Migrations completed successfully!");
+            tracing::info!("Migrations completed successfully!");
+        }
+        Err(e) => {
+            println!("❌ Failed to run migrations: {}", e);
+            tracing::error!("Failed to run migrations: {}", e);
+            panic!("Failed to run migrations: {}", e);
+        }
+    }
 
     let state = AppState { db: pool };
 
