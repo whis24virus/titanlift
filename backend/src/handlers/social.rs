@@ -194,11 +194,12 @@ pub async fn get_leaderboard(
 
     match leaderboard {
         Ok(recs) => {
-             let response = recs.into_iter().map(|r| {
+             let response = recs.into_iter().enumerate().map(|(idx, r)| {
                 serde_json::json!({
                     "id": r.id,
                     "username": r.username,
-                    "total_volume": r.total_volume.unwrap_or(0.0)
+                    "total_volume_kg": r.total_volume.unwrap_or(0.0),
+                    "rank": idx + 1
                 })
             }).collect::<Vec<_>>();
             Json(response).into_response()
