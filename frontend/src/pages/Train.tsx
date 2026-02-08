@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { fetchExercises, createWorkout, logSet, listTemplates, getTemplate, finishWorkoutApi, updateTemplateExercises } from '../api/client';
 import { useWorkoutStore } from '../hooks/useWorkoutStore';
-import { Play, Plus, GripVertical, Info, Dumbbell, Trophy, Medal, Crown, ListChecks, ChevronRight, Clock } from 'lucide-react';
+import { Play, Plus, GripVertical, Info, Dumbbell, Crown, ListChecks, ChevronRight, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -20,14 +20,6 @@ const DEMO_USER_ID = "763b9c95-4bae-4044-9d30-7ae513286b37";
 interface QueuedExercise extends Exercise {
     queueId: string; // Unique ID for DnD
 }
-
-const BADGE_DESCRIPTIONS: Record<string, string> = {
-    "Titan Volume": "Lifted 10,000kg in one session!",
-    "Heavy Lifter": "Lifted 5,000kg in one session!",
-    "Marathoner": "Workout lasted over 90 minutes!",
-    "Speed Demon": "Fast and heavy lifting!",
-    "Volume Warrior": "Completed 20+ sets!",
-};
 
 // Fallback images (Anime Style) - Local Assets removed as we use CSS gradients now
 
