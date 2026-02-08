@@ -193,9 +193,9 @@ pub async fn get_leaderboard(
         _ => "", // "all" - no date filter
     };
 
-    // Build muscle group filter
+    // Build muscle group filter (use LOWER for case-insensitive match)
     let muscle_filter = if muscle_group.is_some() {
-        "AND e.muscle_group = $1"
+        "AND LOWER(e.muscle_group) = LOWER($1)"
     } else {
         ""
     };
