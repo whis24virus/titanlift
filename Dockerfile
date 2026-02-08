@@ -11,7 +11,9 @@ RUN npm run build
 FROM rust:1.80 as backend-builder
 WORKDIR /usr/src/app
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-COPY backend/Cargo.toml backend/Cargo.lock ./
+COPY backend/Cargo.toml ./
+# Copy lock file if it exists (using wildcard trick or just direct copy if we are sure)
+COPY backend/Cargo.lock* ./
 COPY backend/.sqlx ./.sqlx
 # Enable offline mode for sqlx
 ENV SQLX_OFFLINE=true
