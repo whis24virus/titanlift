@@ -1,5 +1,5 @@
 -- Create follows table
-CREATE TABLE follows (
+CREATE TABLE IF NOT EXISTS follows (
     follower_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     following_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -7,7 +7,7 @@ CREATE TABLE follows (
 );
 
 -- Create posts table
-CREATE TABLE posts (
+CREATE TABLE IF NOT EXISTS posts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     workout_id UUID REFERENCES workouts(id) ON DELETE SET NULL, -- Optional link to a workout
