@@ -158,7 +158,7 @@ export const getSocialProfile = async (targetId: string): Promise<any> => {
     return response.json();
 };
 
-export const updateSocialProfile = async (data: { bio?: string, instagram?: string, twitter?: string }) => {
+export const updateSocialProfile = async (data: { user_id: string, bio?: string, instagram?: string, twitter?: string }) => {
     const response = await fetch(`${API_BASE}/social/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

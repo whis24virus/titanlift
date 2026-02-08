@@ -195,7 +195,7 @@ export function Profile() {
                                 Cancel
                             </button>
                             <button
-                                onClick={() => updateSocialMutation.mutate(socialForm)}
+                                onClick={() => updateSocialMutation.mutate({ user_id: USER_ID, ...socialForm })}
                                 className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg font-medium text-white shadow-lg shadow-purple-500/20"
                             >
                                 Save Changes

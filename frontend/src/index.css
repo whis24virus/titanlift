@@ -79,3 +79,16 @@ body {
   @apply bg-background text-foreground;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+/* Ensure input text is always visible */
+input,
+textarea,
+select {
+  @apply text-foreground;
+  color: white !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  @apply text-muted-foreground;
+}
