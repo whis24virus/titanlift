@@ -90,5 +90,5 @@ select {
 
 input::placeholder,
 textarea::placeholder {
-  @apply text-muted-foreground;
+  color: hsl(var(--muted-foreground));
 }
