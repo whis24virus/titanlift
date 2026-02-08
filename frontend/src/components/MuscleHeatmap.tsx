@@ -85,10 +85,10 @@ export function MuscleHeatmap({ sets, exercises }: MuscleHeatmapProps) {
         { id: 'biceps', keys: ['arms', 'biceps'] },
         { id: 'forearm', keys: ['arms', 'forearms'] },
         // Back
-        { id: 'trapezius', keys: ['back', 'traps'] },
+        { id: 'trapezius', keys: ['back', 'traps', 'shoulders'] }, // Traps often work with shoulders
         { id: 'upper-back', keys: ['back', 'lats'] },
         { id: 'lower-back', keys: ['back', 'lower back'] },
-        { id: 'back-deltoids', keys: ['shoulders'] }, // Assuming posterior
+        { id: 'back-deltoids', keys: ['shoulders', 'delts'] }, // Posterior & Side (approx)
         { id: 'triceps', keys: ['arms', 'triceps'] },
         { id: 'gluteal', keys: ['legs', 'glutes'] },
         { id: 'hamstring', keys: ['legs', 'hamstrings'] },

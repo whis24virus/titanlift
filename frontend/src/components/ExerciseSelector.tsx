@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Info, Plus, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { Exercise } from '../api/types';
@@ -30,14 +31,14 @@ export function ExerciseSelector({ exercises, onSelect, onClose }: ExerciseSelec
         });
     }, [exercises, search, selectedCategory]);
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div className="glass-panel w-full max-w-5xl h-[85vh] rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-300 border border-white/10">
+            <div className="glass-panel !w-[95vw] !max-w-[1400px] h-[85vh] rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-300 border border-white/10">
 
                 {/* Left: List & Filters */}
-                <div className="flex-1 flex flex-col min-w-0 border-r border-white/5 bg-black/20">
+                <div className="flex-1 flex flex-col min-w-[320px] min-h-0 border-r border-white/5 bg-black/20">
                     <div className="p-6 border-b border-white/5 space-y-4">
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-black italic tracking-tighter text-white">SELECT <span className="text-primary">EXERCISE</span></h3>
                             <button onClick={onClose} className="text-muted-foreground hover:text-white transition-colors">
                                 <X className="w-6 h-6" />
@@ -115,7 +116,7 @@ export function ExerciseSelector({ exercises, onSelect, onClose }: ExerciseSelec
                 </div>
 
                 {/* Right: Preview */}
-                <div className="w-full md:w-[450px] bg-black/40 p-0 flex flex-col border-l border-white/5 h-full relative">
+                <div className="w-full md:w-[450px] shrink-0 bg-black/40 p-0 flex flex-col border-l border-white/5 h-full relative">
                     {previewExercise ? (
                         <>
                             {/* Header Image Area */}
@@ -201,6 +202,7 @@ export function ExerciseSelector({ exercises, onSelect, onClose }: ExerciseSelec
                 </div>
 
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
